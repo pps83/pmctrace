@@ -252,22 +252,7 @@ static void CALLBACK Win32ProcessETWEvent(EVENT_RECORD *Event)
                     }
                     else
                     {
-                        /* TODO(casey): I haven't been able to figure out precisely why this failure occurs. If a
-                           prior run does not shut down properly (the process crashes or is killed, etc.), then on the
-                           next run this error will often occur. If you look at the trace, you'll see that the reason
-                           is because SysCallEnter/SysCallExit pairs are NOT being sent to us like they normally are!
-                           so something about an unclean exit makes it so that a subsequent run can't collect those
-                           events.
-                           
-                           Note that this occurs _even though_ during startup, we call ControlTraceW with EVENT_TRACE_CONTROL_STOP
-                           to stop any orphaned trace from a prior run. That alone is apparently not sufficient to
-                           clean up everything that needs to be cleaned up.
-                           
-                           So it remains an open question as to whether there is a sequence of calls you can make
-                           on startup to ensure that you will get those events even if a prior process using the
-                           tracer was killed mid-run (say, by the developer terminating a run inside their debugger)
-                           and thus didn't run its clean up code. */
-                        TraceError(Tracer, "No ENTER for CLOSE event - this can happen when a prior trace was not shut down properly");
+                        TraceError(Tracer, "No ENTER for CLOSE event");
                     }
                     
                     // NOTE(casey): Remove this trace from the list of traces running on this CPU core
@@ -531,23 +516,24 @@ static void Win32RegisterTraceMarker(pmc_tracer *Tracer)
 
 static void Win32CreateTrace(pmc_tracer *Tracer, pmc_source_mapping *SourceMapping)
 {
+    const WCHAR TraceName[] = L"Win32PMCTrace";
+    
     EVENT_TRACE_PROPERTIES_V2 *Props = &Tracer->Win32TraceDesc.Properties;
     Props->Wnode.BufferSize = sizeof(Tracer->Win32TraceDesc);
+    Props->LoggerNameOffset = offsetof(win32_trace_description, Name);
+    
+    // NOTE(casey): Attempt to stop any existing orphaned trace from a previous run
+    ControlTraceW(0, TraceName, (EVENT_TRACE_PROPERTIES *)Props, EVENT_TRACE_CONTROL_STOP);
+    
+    /* NOTE(casey): Attempt to start the trace. Note that the fields we care about MUST
+       be filled in after the EVENT_TRACE_CONTROL_STOP ControlTraceW call, because
+       that call will overwrite the properties! */
     Props->Wnode.ClientContext = 3;
     Props->Wnode.Flags = WNODE_FLAG_TRACED_GUID | WNODE_FLAG_VERSIONED_PROPERTIES;
     Props->LogFileMode = EVENT_TRACE_REAL_TIME_MODE | EVENT_TRACE_SYSTEM_LOGGER_MODE;
     Props->VersionNumber = 2;
     Props->EnableFlags = EVENT_TRACE_FLAG_CSWITCH | EVENT_TRACE_FLAG_NO_SYSCONFIG | EVENT_TRACE_FLAG_SYSTEMCALL;
-    Props->LoggerNameOffset = sizeof(Tracer->Win32TraceDesc);
-    
-    const WCHAR TraceName[] = L"Win32PMCTrace";
     ULONG StartStatus = StartTraceW(&Tracer->TraceHandle, TraceName, (EVENT_TRACE_PROPERTIES*)Props);
-    if(StartStatus == ERROR_ALREADY_EXISTS)
-    {
-        // NOTE(casey): Attempt to stop the existing trace, then retry
-        ControlTraceW(0, TraceName, (EVENT_TRACE_PROPERTIES *)Props, EVENT_TRACE_CONTROL_STOP);
-        StartStatus = StartTraceW(&Tracer->TraceHandle, TraceName, (EVENT_TRACE_PROPERTIES *)Props);
-    }
     
     if(StartStatus != ERROR_SUCCESS)
     {
