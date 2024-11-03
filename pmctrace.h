@@ -39,18 +39,11 @@ struct pmc_trace_result
     b32 Completed;
 };
 
-struct pmc_traced_region;
-struct pmc_region_internals
-{
-    pmc_traced_region *Next;
-    b32 TakeNextSysExitAsStart;
-    u32 TracingThreadID;
-};
-
 struct pmc_traced_region
 {
     pmc_trace_result Results;
-    pmc_region_internals Internals;
+    pmc_traced_region *Next;
+    u32 OnThreadID;
 };
 
 struct pmc_tracer;
