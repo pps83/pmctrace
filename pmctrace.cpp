@@ -452,7 +452,11 @@ static pmc_source_mapping MapPMCNames(pmc_name_array *SourceNames)
                     wchar_t const *SourceString = SourceNames->Strings[SourceNameIndex];
                     if(SourceString)
                     {
-                        Result.PMCCount = SourceNameIndex + 1;
+                        u32 CheckMax = SourceNameIndex + 1;
+                        if(Result.PMCCount < CheckMax)
+                        {
+                            Result.PMCCount = CheckMax;
+                        }
                         if(lstrcmpW(Info->Description, SourceString) == 0)
                         {
                             Result.SourceIndex[SourceNameIndex] = Info->Source;
