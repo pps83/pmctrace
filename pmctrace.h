@@ -1,13 +1,13 @@
 /* ========================================================================
 
    (C) Copyright 2024 by Molly Rocket, Inc., All Rights Reserved.
-   
+
    This software is provided 'as-is', without any express or implied
    warranty. In no event will the authors be held liable for any damages
    arising from the use of this software.
-   
+
    Please see https://computerenhance.com for more information
-   
+
    ======================================================================== */
 
 //
@@ -32,7 +32,7 @@ struct pmc_source_mapping
 struct pmc_trace_result
 {
     u64 Counters[MAX_TRACE_PMC_COUNT];
-    
+
     u64 TSCElapsed;
     u64 ContextSwitchCount;
     u32 PMCCount;

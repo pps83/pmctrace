@@ -1,13 +1,13 @@
 /* ========================================================================
 
    (C) Copyright 2024 by Molly Rocket, Inc., All Rights Reserved.
-   
+
    This software is provided 'as-is', without any express or implied
    warranty. In no event will the authors be held liable for any damages
    arising from the use of this software.
-   
+
    Please see https://computerenhance.com for more information
-   
+
    ======================================================================== */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -46,7 +46,7 @@ int main(void)
         L"DcacheMisses",
         L"IcacheMisses",
     };
-    
+
     pmc_name_array IntelNameArray =
     {
         L"TotalIssues",
@@ -54,7 +54,7 @@ int main(void)
         L"BranchInstructions",
         L"BranchMispredictions",
     };
-    
+
     printf("Looking for AMD PMCs...\n");
     pmc_name_array *UsedNames = &AMDNameArray;
     pmc_source_mapping PMCMapping = MapPMCNames(&AMDNameArray);
@@ -64,27 +64,27 @@ int main(void)
         UsedNames = &IntelNameArray;
         PMCMapping = MapPMCNames(&IntelNameArray);
     }
-    
+
     //
     // NOTE(casey): Collect PMCs
     //
-    
+
     if(IsValid(&PMCMapping))
     {
         pmc_tracer Tracer;
-        
+
         printf("Starting trace...\n");
         StartTracing(&Tracer, &PMCMapping);
-     
+
         pmc_traced_region Region[2];
-        
+
         StartCountingPMCs(&Tracer, &Region[0]);
         printf("... This printf is measured only by Region[0].\n");
         StartCountingPMCs(&Tracer, &Region[1]);
         printf("... This printf is measured by both.\n");
         StopCountingPMCs(&Tracer, &Region[0]);
         StopCountingPMCs(&Tracer, &Region[1]);
-        
+
         printf("Getting results...\n");
         for(u32 ResultIndex = 0; ResultIndex < ArrayCount(Region); ++ResultIndex)
         {
@@ -92,7 +92,7 @@ int main(void)
             if(NoErrors(&Tracer))
             {
                 printf("\n%llu TSC elapsed [%llu context switch%s]\n",
-                       Result.TSCElapsed, Result.ContextSwitchCount, 
+                       Result.TSCElapsed, Result.ContextSwitchCount,
                        (Result.ContextSwitchCount != 1) ? "es" : "");
                 for(u32 CI = 0; CI < Result.PMCCount; ++CI)
                 {
@@ -106,7 +106,7 @@ int main(void)
                 break;
             }
         }
-        
+
         printf("Stopping trace...\n");
         StopTracing(&Tracer);
     }
@@ -114,6 +114,6 @@ int main(void)
     {
         printf("ERROR: Unable to find suitable ETW PMCs\n");
     }
-    
+
     return 0;
 }

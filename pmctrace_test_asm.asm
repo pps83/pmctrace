@@ -20,7 +20,7 @@ CountNonZeroesWithBranch:
 
 .loop:
     mov al, [rdx + r10]
-    
+
     cmp al, 0
     jz .skipsum
     inc rax
