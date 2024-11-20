@@ -50,7 +50,7 @@ int main(void)
     pmc_name_array IntelNameArray =
     {
         L"TotalIssues",
-        L"UnhaltedCoreCycles"
+        L"UnhaltedCoreCycles",
         L"BranchInstructions",
         L"BranchMispredictions",
     };
